@@ -1,0 +1,146 @@
+clc;
+clear all
+filepath = 'I:\my_items\2023_06_06数学建模校赛\B题\B题\vital-signal-data\';
+ID8_breath = readmatrix(strcat(filepath,'ID8breath.txt'));
+ID8_heart_rate = readmatrix(strcat(filepath,'ID8heart.txt'));
+ID8_totalMotion = readmatrix(strcat(filepath,'ID8motion.txt'));
+ID8_opticalpower = readmatrix(strcat(filepath,'ID8power.txt'));
+
+x = 1:1:length(ID8_breath);
+z = ID8_breath;
+% %%取信号频谱图
+% N = length(z);
+% F = 10000;
+% n=2^nextpow2(N); 
+% fly=fft(z,n); %对原始信号进行离散傅里叶变换
+% a=abs(2*fly/N); %振幅
+% f=F/2*linspace(0,1,n/2+1); %频率
+% figure
+% plot(f(1:length(f)),a(1:length(f))); %绘制信号频谱图
+% title('FFT频谱图');
+% xlabel('频率');
+% ylabel('振幅');
+%应用小波分析进行去噪处理
+xb=wden(z,'minimaxi','s','one',3,'db3');
+figure,
+sgtitle(strcat('小波分析db3去噪'));
+subplot(221)
+plot(x,z);
+title(strcat('实际信号'));
+xlabel('y');
+ylabel('z(height)');
+subplot(222)
+plot(x,xb);
+title(strcat('去噪信号'));
+xlabel('y');
+ylabel('z(height)');
+subplot(223)
+plot(x,z,'r',x,xb);
+title(strcat('实际信号与去噪信号'));
+xlabel('y');
+ylabel('z(height)');
+%%应用小波分析进行信号压缩
+figure,
+sgtitle(strcat('小波分析haar信号压缩'));
+subplot(321);  
+plot(x,z);
+title(strcat('实际信号'));
+xlabel('y');
+ylabel('z(height)');
+alpha=1.4;
+for i=1:5
+    [C,L]=wavedec(z,i,'haar'); %使用haar小波对信号进行i层分解
+    thr=wdcbm(C,L,alpha); %获取信号压缩的阈值（threshold）
+    xd=wdencmp('lvd',C,L,'haar',i,thr,'s'); %对信号进行压缩
+    subplot(3,2,i+1);
+    plot(x,xd);
+    ylabel([num2str(i),'层分解']);
+end
+%%应用小波分析进行信号分离
+[C,L]=wavedec(z,5,'db5'); %使用db5小波对信号进行5层分解
+figure; 
+sgtitle(strcat('小波分析db5低频系数重构'));
+subplot(321);
+plot(x,z);
+ylabel(strcat('实际信号'));
+for i=1:5
+    %对分解的第5层到第1层的低频系数进行重构
+    A=wrcoef('A',C,L,'db5',6-i);
+    subplot(3,2,i+1); 
+    plot(x,A);
+    ylabel(['A',num2str(6-i)]);
+end
+figure;
+sgtitle(strcat('小波分析db5高频系数重构'));
+subplot(321);
+plot(x,z);
+ylabel(strcat('实际信号'));
+for i=1:5
+    % 对分解的第5层到第1层的高频系数进行重构
+    D=wrcoef('D',C,L,'db5',6-i);
+    subplot(3,2,i+1);
+    plot(x,D);
+    ylabel(['D',num2str(6-i)]);
+end
+
+
+% tic;
+% [m, n] = size(ID8_breath);   %m是数据个数，n是数据维数
+% ma = zeros(n);        %每一维最大的数
+% mi = zeros(n);        %每一维最小的数
+% u = zeros(N,n);       %随机初始化，最终迭代到每一类的中心位置
+% for i = 1 : n
+%     ma(i) = max(data(:,i));    %每一维最大的数
+%     mi(i) = min(data(:,i));    %每一维最小的数
+%     for j = 1 : N
+%         u(j,i) = ma(i) + (mi(i) - ma(i)) * rand();  %随机初始化，不过还是在每一维[min max]中初始化好些
+%     end
+% end
+% 
+% while 1
+%     pre_u = u;            %上一次求得的中心位置
+%     for i = 1 : N
+%         tmp{i} = [];      % 公式一中的x(i)-uj,为公式一实现做准备
+%         for j = 1 : m
+%             tmp{i} = [tmp{i}; data(j,:) - u(i,:)];
+%         end
+%     end
+%     
+%     quan = zeros(m,N);
+%     for i = 1 : m        %公式一的实现
+%         c = [];
+%         for j = 1 : N
+%             c = [c norm(tmp{j}(i,:))];
+%         end
+%         [junk, index] = min(c);
+%         quan(i, index) = norm(tmp{index}(i,:));
+%     end
+%     
+%     for i = 1 : N            %公式二的实现
+%         for j = 1 : n
+%             u(i,j) = sum(quan(:,i) .* data(:,j)) / sum(quan(:,i));
+%         end
+%     end
+%     
+%     if norm(pre_u-u) < eps  %不断迭代直到位置不再变化
+%         break;
+%     end
+% end
+% 
+% re = [];
+% for i = 1 : m
+%     tmp = [];
+%     for j = 1 : N
+%         tmp = [tmp norm(data(i,:) - u(j,:))];
+%     end
+%     [junk, index]=min(tmp);
+%     re = [re;data(i,:) index];
+% end
+% 
+% %draw shapes
+% figure;
+% hold on;
+% title('K-MEANS')
+% drawshapes(data, re(:,3),m);
+% toc;
+% 

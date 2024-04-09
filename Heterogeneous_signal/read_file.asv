@@ -1,0 +1,30 @@
+clc;
+clear all
+fielepath = 'I:\my_items\2023_06_06数学建模校赛\B题\B题\vital-signal-data\train\';
+all_files  = dir(fullfile(fielepath,'*.json'));
+l_file = length(all_files);
+% by_file= all_files(:,4);
+
+for ii = 1:l_file
+    by_file(ii,1) = all_files(ii).bytes;
+    name_file1(ii,1)= str2num(all_files(ii).name(1:end-25));
+end
+ID_member = tabulate(name_file1);
+ID_member1 = [ ID_member(3,:); ID_member(8,:);ID_member(28,:);ID_member(30,:);ID_member(44,:)];
+
+figure(1)
+[num  kind] = hist(name_file1,[3 8 28 30 44]);
+h=histogram(name_file1,'LineWidth',2);
+for i = 1:length(kind)
+    text(kind(i),num(i),num2str(num(i)),...
+    'HorizontalAlignment','center',...
+    'VerticalAlignment','bottom')
+end
+ylabel('信号测量数量')
+xticks([3 8 28 30 44])
+xticklabels([3 8 28 30 44])
+xlabel('志愿者ID');
+title('志愿者生命体征信号测量')
+set(gca,'FontSize',16,'linewidth',2);
+
+
